@@ -28,17 +28,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-        temperature: 0.6,
-      }),
+     body: JSON.stringify({
+  model: "llama-3.3-70b-versatile",
+  messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+  temperature: 0.6,
+}),
     });
 
     if (!res.ok) {
