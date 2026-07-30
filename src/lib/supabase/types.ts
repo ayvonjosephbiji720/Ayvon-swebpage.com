@@ -53,6 +53,7 @@ export type JobApplication = {
   notes: string | null;
   resume_version: string | null;
   cover_letter_version: string | null;
+  job_category: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -142,6 +143,35 @@ export type PrayerStreak = {
   prayed_date: string;
 };
 
+export type EmailReminderSettings = {
+  user_id: string;
+  enabled: boolean;
+  updated_at: string;
+};
+
+export type EmailReminderType = "1_day" | "1_hour";
+
+export type EmailReminderLog = {
+  id: string;
+  calendar_event_id: string;
+  reminder_type: EmailReminderType;
+  sent_at: string;
+};
+
+export type DailyTargetCategory = {
+  category: string;
+  goal: number;
+};
+
+export type DailyTarget = {
+  id: string;
+  user_id: string;
+  target_date: string;
+  categories: DailyTargetCategory[];
+  total_goal: number;
+  created_at: string;
+};
+
 type TableDef<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] };
 
 export type Database = {
@@ -154,6 +184,9 @@ export type Database = {
       prayer_notes: TableDef<PrayerNote>;
       prayer_times: TableDef<PrayerTime>;
       prayer_streaks: TableDef<PrayerStreak>;
+      email_reminder_settings: TableDef<EmailReminderSettings>;
+      email_reminder_log: TableDef<EmailReminderLog>;
+      daily_targets: TableDef<DailyTarget>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

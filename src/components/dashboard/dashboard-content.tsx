@@ -11,6 +11,7 @@ import {
   CalendarClock,
   BookOpenCheck,
   HandHeart,
+  Target,
 } from "lucide-react";
 import { StatCard } from "./stat-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useTasks } from "@/hooks/useTasks";
 import { useStudySessions } from "@/hooks/useStudySessions";
 import { usePrayer } from "@/hooks/usePrayer";
+import { useDailyTarget } from "@/hooks/useDailyTarget";
 import { getTodaysPrayerContent } from "@/content/prayer-content";
 import { EVENT_TYPE_COLORS } from "@/lib/supabase/types";
 import { formatDate, formatTime } from "@/lib/utils";
@@ -52,6 +54,13 @@ export function DashboardContent() {
   const { tasks, toggleTask, seedDailyGoals } = useTasks(new Date().toISOString().slice(0, 10));
   const { sessions } = useStudySessions();
   const { currentStreak, times } = usePrayer();
+  const {
+    totalAppliedToday,
+    totalGoalToday,
+    percentComplete: targetPercentComplete,
+    remaining: targetRemaining,
+    isComplete: targetComplete,
+  } = useDailyTarget();
 
   const seeded = React.useRef(false);
   React.useEffect(() => {
@@ -121,6 +130,34 @@ export function DashboardContent() {
         <StatCard label="Rejections" value={rejections} icon={XCircle} tone="destructive" />
         <StatCard label="Prayer Streak" value={`${currentStreak} day${currentStreak === 1 ? "" : "s"}`} icon={HandHeart} tone="primary" />
       </div>
+
+      <Card className="border-primary/40">
+        <CardContent className="flex flex-wrap items-center gap-6 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <Target className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold">Today&apos;s Target</p>
+              <p className="text-xs text-muted-foreground">
+                {targetComplete ? "🎉 Completed!" : `${targetRemaining} applications remaining`}
+              </p>
+            </div>
+          </div>
+          <div className="min-w-[10rem] flex-1">
+            <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {totalAppliedToday}/{totalGoalToday} applied
+              </span>
+              <span>{targetPercentComplete}%</span>
+            </div>
+            <Progress value={targetPercentComplete} />
+          </div>
+          <Link href="/daily-target" className="text-xs text-primary hover:underline shrink-0">
+            View Daily Target
+          </Link>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

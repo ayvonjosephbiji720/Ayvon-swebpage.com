@@ -11,6 +11,7 @@ import { usePrayer } from "@/hooks/usePrayer";
 import { getTodaysPrayerContent } from "@/content/prayer-content";
 import { formatDate } from "@/lib/utils";
 import { useNotificationPermission } from "@/hooks/useNotificationScheduler";
+import { DailyBlessings } from "./daily-blessings";
 
 export function PrayerContent() {
   const { notes, times, currentStreak, streakDates, addNote, deleteNote, updatePrayerTime, markPrayedToday } =
@@ -87,6 +88,8 @@ export function PrayerContent() {
           </CardContent>
         </Card>
       </div>
+
+      <DailyBlessings />
 
       <Card>
         <CardHeader>

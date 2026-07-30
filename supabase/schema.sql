@@ -27,6 +27,7 @@ create table if not exists public.jobs (
   notes text,
   resume_version text,
   cover_letter_version text,
+  job_category text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -129,6 +130,45 @@ create table if not exists public.prayer_streaks (
 create index if not exists prayer_streaks_user_id_idx on public.prayer_streaks(user_id);
 
 -- ---------------------------------------------------------------------------
+-- email_reminder_settings (one row per user: interview email reminders on/off)
+-- ---------------------------------------------------------------------------
+create table if not exists public.email_reminder_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  enabled boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- email_reminder_log (prevents duplicate reminder emails for the same event)
+-- ---------------------------------------------------------------------------
+create table if not exists public.email_reminder_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  calendar_event_id uuid not null references public.calendar_events(id) on delete cascade,
+  reminder_type text not null check (reminder_type in ('1_day', '1_hour')),
+  sent_at timestamptz not null default now(),
+  unique (calendar_event_id, reminder_type)
+);
+
+create index if not exists email_reminder_log_user_id_idx on public.email_reminder_log(user_id);
+
+-- ---------------------------------------------------------------------------
+-- daily_targets (Smart Daily Target: today's job-category goals)
+-- ---------------------------------------------------------------------------
+create table if not exists public.daily_targets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  target_date date not null default current_date,
+  categories jsonb not null default '[]'::jsonb,
+  total_goal integer not null default 15,
+  created_at timestamptz not null default now(),
+  unique (user_id, target_date)
+);
+
+create index if not exists daily_targets_user_id_idx on public.daily_targets(user_id);
+create index if not exists daily_targets_date_idx on public.daily_targets(target_date desc);
+
+-- ---------------------------------------------------------------------------
 -- updated_at trigger for jobs
 -- ---------------------------------------------------------------------------
 create or replace function public.set_updated_at()
@@ -154,12 +194,15 @@ alter table public.study_sessions enable row level security;
 alter table public.prayer_notes enable row level security;
 alter table public.prayer_times enable row level security;
 alter table public.prayer_streaks enable row level security;
+alter table public.email_reminder_settings enable row level security;
+alter table public.email_reminder_log enable row level security;
+alter table public.daily_targets enable row level security;
 
 do $$
 declare
   t text;
 begin
-  foreach t in array array['jobs','calendar_events','tasks','study_sessions','prayer_notes','prayer_times','prayer_streaks']
+  foreach t in array array['jobs','calendar_events','tasks','study_sessions','prayer_notes','prayer_times','prayer_streaks','email_reminder_settings','email_reminder_log','daily_targets']
   loop
     execute format('drop policy if exists "select_own_%1$s" on public.%1$s', t);
     execute format('drop policy if exists "insert_own_%1$s" on public.%1$s', t);
@@ -180,7 +223,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['jobs','calendar_events','tasks','study_sessions','prayer_notes','prayer_streaks']
+  foreach t in array array['jobs','calendar_events','tasks','study_sessions','prayer_notes','prayer_streaks','daily_targets','email_reminder_settings']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%1$s', t);
