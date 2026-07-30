@@ -24,6 +24,9 @@ export function useTasks(dateFilter?: string) {
   const supabase = getSupabaseClient();
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
+  // Unique per hook instance so two simultaneous callers never collide on
+  // the same Realtime channel topic (see useJobs.ts for the full story).
+  const channelSuffix = React.useId().replace(/[^a-zA-Z0-9]/g, "");
 
   const refresh = React.useCallback(async () => {
     if (!supabase || !user) {
@@ -49,18 +52,17 @@ export function useTasks(dateFilter?: string) {
 
   React.useEffect(() => {
     if (!supabase || !user) return;
-    const channel = supabase
-      .channel("tasks-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tasks", filter: `user_id=eq.${user.id}` },
-        () => refresh()
-      )
-      .subscribe();
+    const channel = supabase.channel(`tasks-changes-${channelSuffix}`);
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "tasks", filter: `user_id=eq.${user.id}` },
+      () => refresh()
+    );
+    channel.subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, user, refresh]);
+  }, [supabase, user, refresh, channelSuffix]);
 
   const addTask = React.useCallback(
     async (input: TaskInput) => {

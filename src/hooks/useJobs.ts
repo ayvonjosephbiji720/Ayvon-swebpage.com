@@ -16,6 +16,14 @@ export function useJobs() {
   const supabase = getSupabaseClient();
   const [jobs, setJobs] = React.useState<JobApplication[]>([]);
   const [loading, setLoading] = React.useState(true);
+  // useJobs() is called from multiple places at once (e.g. dashboard-content
+  // renders it directly AND via useDailyTarget). Supabase's client reuses a
+  // Realtime channel by its topic name, so two instances sharing a fixed
+  // name like "jobs-changes" would race: the second instance's .on() call
+  // lands on a channel the first has already subscribed, which throws
+  // "cannot add postgres_changes callbacks ... after subscribe()". A unique
+  // per-instance suffix keeps every hook instance's channel independent.
+  const channelSuffix = React.useId().replace(/[^a-zA-Z0-9]/g, "");
 
   const refresh = React.useCallback(async () => {
     if (!supabase || !user) {
@@ -42,18 +50,20 @@ export function useJobs() {
 
   React.useEffect(() => {
     if (!supabase || !user) return;
-    const channel = supabase
-      .channel("jobs-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "jobs", filter: `user_id=eq.${user.id}` },
-        () => refresh()
-      )
-      .subscribe();
+    // Build the channel and register every .on() callback BEFORE calling
+    // .subscribe() — Supabase throws if you try to add a postgres_changes
+    // listener to a channel that has already been subscribed.
+    const channel = supabase.channel(`jobs-changes-${channelSuffix}`);
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "jobs", filter: `user_id=eq.${user.id}` },
+      () => refresh()
+    );
+    channel.subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, user, refresh]);
+  }, [supabase, user, refresh, channelSuffix]);
 
   const createJob = React.useCallback(
     async (input: JobInput) => {
