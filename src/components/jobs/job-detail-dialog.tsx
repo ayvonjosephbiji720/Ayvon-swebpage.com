@@ -39,6 +39,7 @@ export function JobDetailDialog({
         <div className="grid grid-cols-2 gap-4">
           <Field label="Location" value={job.job_location} />
           <Field label="Job type" value={job.job_type} />
+          <Field label="IT job category" value={job.job_category} />
           <Field label="Salary" value={job.salary} />
           <Field label="Website / Portal" value={job.website} />
           <Field label="Date applied" value={`${formatDate(job.date_applied)} · ${formatTime(job.date_applied)}`} />

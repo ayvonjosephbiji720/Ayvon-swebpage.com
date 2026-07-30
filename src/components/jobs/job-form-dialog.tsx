@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { JOB_STATUSES, JOB_TYPES, type JobApplication, type JobStatus, type JobType } from "@/lib/supabase/types";
+import { JOB_CATEGORIES } from "@/content/job-categories";
 import type { JobInput } from "@/hooks/useJobs";
 import { Loader2 } from "lucide-react";
 
@@ -23,6 +24,7 @@ const EMPTY_FORM = {
   job_title: "",
   job_location: "",
   job_type: "" as JobType | "",
+  job_category: "",
   salary: "",
   website: "",
   application_link: "",
@@ -58,6 +60,7 @@ export function JobFormDialog({
               job_title: job.job_title,
               job_location: job.job_location ?? "",
               job_type: (job.job_type as JobType) ?? "",
+              job_category: job.job_category ?? "",
               salary: job.salary ?? "",
               website: job.website ?? "",
               application_link: job.application_link ?? "",
@@ -83,6 +86,7 @@ export function JobFormDialog({
     const { error } = await onSubmit({
       ...form,
       job_type: form.job_type || null,
+      job_category: form.job_category || null,
       job_location: form.job_location || null,
       salary: form.salary || null,
       website: form.website || null,
@@ -130,6 +134,24 @@ export function JobFormDialog({
                 {JOB_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>IT job category</Label>
+            <Select
+              value={form.job_category}
+              onValueChange={(v) => setForm((f) => ({ ...f, job_category: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="For Daily Target progress" />
+              </SelectTrigger>
+              <SelectContent>
+                {JOB_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
                   </SelectItem>
                 ))}
               </SelectContent>

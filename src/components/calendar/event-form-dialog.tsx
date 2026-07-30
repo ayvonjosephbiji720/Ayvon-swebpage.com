@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CALENDAR_EVENT_TYPES, type CalendarEvent, type CalendarEventType } from "@/lib/supabase/types";
 import type { CalendarEventInput } from "@/hooks/useCalendarEvents";
+import { useJobs } from "@/hooks/useJobs";
 import { Loader2, Trash2 } from "lucide-react";
 
 function toLocalInput(iso: string | null) {
@@ -35,6 +36,7 @@ const EMPTY = {
   location: "",
   notes: "",
   reminder_minutes_before: 30,
+  job_id: "",
 };
 
 export function EventFormDialog({
@@ -54,6 +56,7 @@ export function EventFormDialog({
 }) {
   const [form, setForm] = React.useState(EMPTY);
   const [submitting, setSubmitting] = React.useState(false);
+  const { jobs } = useJobs();
 
   React.useEffect(() => {
     if (!open) return;
@@ -67,6 +70,7 @@ export function EventFormDialog({
         location: event.location ?? "",
         notes: event.notes ?? "",
         reminder_minutes_before: event.reminder_minutes_before ?? 30,
+        job_id: event.job_id ?? "",
       });
     } else {
       setForm({ ...EMPTY, start: toLocalInput((initialStart ?? new Date()).toISOString()) });
@@ -85,7 +89,7 @@ export function EventFormDialog({
       all_day: form.all_day,
       location: form.location || null,
       notes: form.notes || null,
-      job_id: event?.job_id ?? null,
+      job_id: form.job_id || null,
       reminder_minutes_before: form.reminder_minutes_before,
     });
     setSubmitting(false);
@@ -147,6 +151,30 @@ export function EventFormDialog({
             </Label>
             <Switch id="all_day" checked={form.all_day} onCheckedChange={(v) => setForm((f) => ({ ...f, all_day: v }))} />
           </div>
+          {form.type === "Interview" && (
+            <div className="space-y-1.5">
+              <Label>Related job application</Label>
+              <Select
+                value={form.job_id || "none"}
+                onValueChange={(v) => setForm((f) => ({ ...f, job_id: v === "none" ? "" : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Link a job (used in email reminders)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {jobs.map((j) => (
+                    <SelectItem key={j.id} value={j.id}>
+                      {j.job_title} · {j.company_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Linking a job fills the company &amp; role name into your email reminders automatically.
+              </p>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="location">Location / link</Label>
             <Input id="location" value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} />

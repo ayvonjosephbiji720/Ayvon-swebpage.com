@@ -3,15 +3,19 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import { useNotificationPermission } from "@/hooks/useNotificationScheduler";
+import { useEmailReminderSettings } from "@/hooks/useEmailReminderSettings";
 import { useRouter } from "next/navigation";
-import { BellRing, LogOut, Mail, ShieldCheck } from "lucide-react";
+import { BellRing, LogOut, Mail, ShieldCheck, MailCheck } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { permission, requestPermission } = useNotificationPermission();
+  const { enabled: emailRemindersEnabled, setEnabled: setEmailRemindersEnabled } = useEmailReminderSettings();
   const router = useRouter();
 
   return (
@@ -67,6 +71,24 @@ export default function SettingsPage() {
                 Enable notifications
               </Button>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MailCheck className="h-4 w-4" /> Email Reminders
+            </CardTitle>
+            <CardDescription>
+              Get an email 1 day and 1 hour before scheduled interviews, with the company, role, time, meeting
+              link, and notes included.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between rounded-lg border border-border p-3">
+            <Label htmlFor="email_reminders" className="cursor-pointer text-sm">
+              Send me interview email reminders
+            </Label>
+            <Switch id="email_reminders" checked={emailRemindersEnabled} onCheckedChange={setEmailRemindersEnabled} />
           </CardContent>
         </Card>
 
