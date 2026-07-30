@@ -42,6 +42,9 @@ Tailwind CSS, and Supabase.
 - **Daily Blessings** *(optional)* — on the Prayer page: the latest video
   from a YouTube channel (embedded player, title, date, description) plus
   the previous 10 as a thumbnail grid, refreshed automatically every ~30 min.
+  Videos the owner has disabled embedding on are filtered out server-side
+  first, so you'll never land on one that just shows YouTube's "playback on
+  other websites has been disabled" error.
 - **AI Assistant** *(optional)* — a chat UI for resume feedback, cover
   letters, interview prep, ATS review, and email drafting. Enabled by adding
   a `GROQ_API_KEY` (free tier available) or `OPENAI_API_KEY`; the page
