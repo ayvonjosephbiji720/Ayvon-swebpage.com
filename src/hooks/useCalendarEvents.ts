@@ -13,6 +13,9 @@ export function useCalendarEvents() {
   const supabase = getSupabaseClient();
   const [events, setEvents] = React.useState<CalendarEvent[]>([]);
   const [loading, setLoading] = React.useState(true);
+  // Unique per hook instance so two simultaneous callers never collide on
+  // the same Realtime channel topic (see useJobs.ts for the full story).
+  const channelSuffix = React.useId().replace(/[^a-zA-Z0-9]/g, "");
 
   const refresh = React.useCallback(async () => {
     if (!supabase || !user) {
@@ -39,18 +42,17 @@ export function useCalendarEvents() {
 
   React.useEffect(() => {
     if (!supabase || !user) return;
-    const channel = supabase
-      .channel("calendar-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "calendar_events", filter: `user_id=eq.${user.id}` },
-        () => refresh()
-      )
-      .subscribe();
+    const channel = supabase.channel(`calendar-changes-${channelSuffix}`);
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "calendar_events", filter: `user_id=eq.${user.id}` },
+      () => refresh()
+    );
+    channel.subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, user, refresh]);
+  }, [supabase, user, refresh, channelSuffix]);
 
   const createEvent = React.useCallback(
     async (input: CalendarEventInput) => {
